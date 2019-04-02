@@ -370,11 +370,16 @@ extension Fuse {
             
             let object = item as AnyObject
             
-            item.properties.forEach { property in
-                guard let value = safeValue(forKey: property.name, from: object) as? String else {
-                    return
+            for property in item.properties {
+                let selector = Selector(property.name)
+                guard object.responds(to: selector) else {
+                    continue
                 }
-                
+
+                guard let valueOrNil = object.perform(selector), let value = valueOrNil.takeUnretainedValue() as? String else {
+                    continue
+                }
+
                 if let result = self.search(pattern, in: value) {
                     let weight = property.weight == 1 ? 1 : 1 - property.weight
                     let score = (result.score == 0 && weight == 1 ? 0.001 : result.score) * weight
